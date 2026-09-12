@@ -23,12 +23,10 @@ export function useConsoleControls() {
     update();
     mq.addEventListener('change', update);
 
-    // Initialize saved sound setting
+    // Sound is on by default, while preserving an explicit user opt-out.
     const savedSound = getSavedSoundPreference();
-    if (savedSound) {
-      dispatch({ type: 'sound', enabled: true });
-      soundEffects.setEnabled(true);
-    }
+    dispatch({ type: 'sound', enabled: savedSound });
+    soundEffects.setEnabled(savedSound);
 
     return () => {
       if (bootTimer.current) clearTimeout(bootTimer.current);

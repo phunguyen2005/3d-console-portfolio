@@ -2,11 +2,14 @@ import { menuItems, projects, type Section } from '../data/portfolio';
 export type Control = 'up' | 'down' | 'left' | 'right' | 'a' | 'b' | 'start' | 'select';
 export type Screen = 'boot' | 'menu' | Section | 'project' | 'caseStudy' | 'settings';
 export interface ConsoleState { screen: Screen; selection: number; project: number; page: number; sound: boolean; contrast: boolean; message: string; previous: Screen; previousSelection: number; previousPage: number }
-export const initialState: ConsoleState = { screen: 'boot', selection: 0, project: 0, page: 0, sound: false, contrast: false, message: '', previous: 'menu', previousSelection: 0, previousPage: 0 };
+export const initialState: ConsoleState = { screen: 'boot', selection: 0, project: 0, page: 0, sound: true, contrast: false, message: '', previous: 'menu', previousSelection: 0, previousPage: 0 };
 export type Action = { type: 'input'; control: Control } | { type: 'ready' } | { type: 'open'; screen: Screen; project?: number } | { type: 'select'; index: number } | { type: 'message'; message: string } | { type: 'sound'; enabled?: boolean } | { type: 'activate'; index: number };
 export function getSavedSoundPreference(): boolean {
-  if (typeof window === 'undefined') return false;
-  try { return localStorage.getItem('console_sound_enabled') === 'true'; } catch { return false; }
+  if (typeof window === 'undefined') return true;
+  try {
+    const saved = localStorage.getItem('console_sound_enabled');
+    return saved === null || saved === 'true';
+  } catch { return true; }
 }
 export function itemCount(state: ConsoleState) {
   switch (state.screen) { case 'menu': return menuItems.length; case 'projects': return projects.length; case 'project': return 2; case 'settings': return 3; default: return 1; }
