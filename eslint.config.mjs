@@ -23,6 +23,14 @@ const eslintConfig = defineConfig([
       "react-hooks/set-state-in-effect": "off",
     },
   },
+  {
+    files: ["src/components/ConsoleScreen.tsx", "src/components/Console3D.tsx", "src/components/ConsoleControls.tsx"],
+    rules: {
+      // Three.js manages its own render graph and texture/uniform mutations
+      "react-hooks/immutability": "off",
+      "react-hooks/refs": "off",
+    },
+  },
 ]);
 
 export default eslintConfig;

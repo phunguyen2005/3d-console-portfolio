@@ -26,13 +26,23 @@ function SoftShadow(){
  useEffect(()=>()=>texture.dispose(),[texture]);return <mesh position={[.2,-.34,-.52]}><planeGeometry args={[5.6,7.15]}/><meshBasicMaterial map={texture} transparent depthWrite={false}/></mesh>;
 }
 export default function Console3D({controller}:{controller:ConsoleController}) {
- const [supported,setSupported]=useState<boolean|null>(null);const [rotation,setRotation]=useState({x:0,y:0,dragging:false});const drag=useRef<{x:number;y:number}|null>(null);
- useEffect(()=>{try{const test=document.createElement('canvas');const gl=test.getContext('webgl2');setSupported(!!gl);gl?.getExtension('WEBGL_lose_context')?.loseContext();}catch{setSupported(false);}},[]);
+  const [supported, setSupported] = useState<boolean | null>(() => {
+    if (typeof window === 'undefined') return true;
+    try {
+      const test = document.createElement('canvas');
+      const gl = test.getContext('webgl2');
+      const ok = !!gl;
+      gl?.getExtension('WEBGL_lose_context')?.loseContext();
+      return ok;
+    } catch {
+      return false;
+    }
+  });
+  const [rotation, setRotation] = useState({ x: 0, y: 0, dragging: false });
+  const drag = useRef<{ x: number; y: number } | null>(null);
  const fallback=<FallbackConsole controller={controller}/>;
  if(supported===false)return fallback;
  return <div className="console-viewport" data-renderer="three" onPointerMove={e=>{if(controller.reducedMotion)return;const box=e.currentTarget.getBoundingClientRect();if(drag.current){setRotation({x:Math.max(-.15,Math.min(.15,(e.clientY-drag.current.y)*.002)),y:Math.max(-.25,Math.min(.25,(e.clientX-drag.current.x)*.002)),dragging:true});}else if(e.pointerType==='mouse')setRotation({x:-(e.clientY-box.top-box.height/2)/box.height*.055,y:(e.clientX-box.left-box.width/2)/box.width*.09,dragging:false});}} onPointerDown={e=>{if((e.target as HTMLElement).closest('button'))return;drag.current={x:e.clientX,y:e.clientY};e.currentTarget.setPointerCapture(e.pointerId);e.currentTarget.style.cursor='grabbing';}} onPointerUp={e=>{drag.current=null;e.currentTarget.style.cursor='grab';setRotation({x:0,y:0,dragging:false});}} onPointerCancel={()=>{drag.current=null;setRotation({x:0,y:0,dragging:false});}} onPointerLeave={()=>{if(!drag.current)setRotation({x:0,y:0,dragging:false});}} style={{cursor:'grab'}}>
- {supported && <SceneBoundary fallback={fallback}><Canvas orthographic camera={{position:[0,0,16],near:.1,far:50,zoom:100}} dpr={[1,1.6]} frameloop="demand" shadows={{type:PCFShadowMap}} gl={{antialias:true,alpha:true,powerPreference:'low-power'}} onCreated={({gl})=>{gl.domElement.addEventListener('webglcontextlost',()=>setSupported(false),{once:true});}}><ambientLight intensity={1.7}/><directionalLight position={[-3,7,8]} intensity={2.6} castShadow shadow-mapSize={[1024,1024]} shadow-camera-left={-5} shadow-camera-right={5} shadow-camera-top={6} shadow-camera-bottom={-6} shadow-normalBias={.025} shadow-radius={5}/><directionalLight position={[4,-1,5]} intensity={.65}/><SoftShadow/><Device controller={controller} rotation={rotation}/></Canvas></SceneBoundary>}
+ {supported && <SceneBoundary fallback={fallback}><Canvas orthographic camera={{position:[0,0,16],near:.1,far:50,zoom:100}} dpr={[1,2.5]} frameloop="demand" shadows={{type:PCFShadowMap}} gl={{antialias:true,alpha:true,powerPreference:'high-performance'}} onCreated={({gl})=>{gl.domElement.addEventListener('webglcontextlost',()=>setSupported(false),{once:true});}}><ambientLight intensity={1.7}/><directionalLight position={[-3,7,8]} intensity={2.6} castShadow shadow-mapSize={[1024,1024]} shadow-camera-left={-5} shadow-camera-right={5} shadow-camera-top={6} shadow-camera-bottom={-6} shadow-normalBias={.025} shadow-radius={5}/><directionalLight position={[4,-1,5]} intensity={.65}/><SoftShadow/><Device controller={controller} rotation={rotation}/></Canvas></SceneBoundary>}
  </div>;
 }
-
-

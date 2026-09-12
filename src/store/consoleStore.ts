@@ -3,7 +3,11 @@ export type Control = 'up' | 'down' | 'left' | 'right' | 'a' | 'b' | 'start' | '
 export type Screen = 'boot' | 'menu' | Section | 'project' | 'caseStudy' | 'settings';
 export interface ConsoleState { screen: Screen; selection: number; project: number; page: number; sound: boolean; contrast: boolean; message: string; previous: Screen; previousSelection: number; previousPage: number }
 export const initialState: ConsoleState = { screen: 'boot', selection: 0, project: 0, page: 0, sound: false, contrast: false, message: '', previous: 'menu', previousSelection: 0, previousPage: 0 };
-export type Action = { type: 'input'; control: Control } | { type: 'ready' } | { type: 'open'; screen: Screen; project?: number } | { type: 'select'; index: number } | { type: 'message'; message: string } | { type: 'sound' } | { type: 'activate'; index: number };
+export type Action = { type: 'input'; control: Control } | { type: 'ready' } | { type: 'open'; screen: Screen; project?: number } | { type: 'select'; index: number } | { type: 'message'; message: string } | { type: 'sound'; enabled?: boolean } | { type: 'activate'; index: number };
+export function getSavedSoundPreference(): boolean {
+  if (typeof window === 'undefined') return false;
+  try { return localStorage.getItem('console_sound_enabled') === 'true'; } catch { return false; }
+}
 export function itemCount(state: ConsoleState) {
   switch (state.screen) { case 'menu': return menuItems.length; case 'projects': return projects.length; case 'project': return 2; case 'settings': return 3; default: return 1; }
 }
@@ -15,7 +19,14 @@ function enter(state: ConsoleState): ConsoleState {
     case 'project': return state.selection === 0 ? { ...state, screen: 'caseStudy', page: 0 } : back(state);
     case 'caseStudy': return { ...state, page: (state.page + 1) % 3 };
     case 'toolkit': return { ...state, page: (state.page + 1) % 2 };
-    case 'settings': return state.selection === 0 ? { ...state, sound: !state.sound } : state.selection === 1 ? { ...state, contrast: !state.contrast } : { ...state, screen: state.previous, selection: state.previousSelection, page: state.previousPage };
+    case 'settings': {
+      if (state.selection === 0) {
+        const nextSound = !state.sound;
+        if (typeof window !== 'undefined') { try { localStorage.setItem('console_sound_enabled', String(nextSound)); } catch {} }
+        return { ...state, sound: nextSound };
+      }
+      return state.selection === 1 ? { ...state, contrast: !state.contrast } : { ...state, screen: state.previous, selection: state.previousSelection, page: state.previousPage };
+    }
     case 'about': case 'experience': return back(state);
     default: return state;
   }
@@ -30,7 +41,11 @@ function back(state: ConsoleState): ConsoleState {
 export function consoleReducer(state: ConsoleState, action: Action): ConsoleState {
   switch (action.type) {
     case 'ready': return state.screen === 'boot' ? { ...state, screen: 'menu' } : state;
-    case 'sound': return { ...state, sound: !state.sound };
+    case 'sound': {
+      const nextSound = action.enabled !== undefined ? action.enabled : !state.sound;
+      if (typeof window !== 'undefined') { try { localStorage.setItem('console_sound_enabled', String(nextSound)); } catch {} }
+      return { ...state, sound: nextSound };
+    }
     case 'message': return { ...state, message: action.message };
     case 'open': return { ...state, screen: action.screen, project: action.project ?? state.project, selection: 0, page: 0, message: '' };
     case 'select': return { ...state, selection: Math.max(0, Math.min(itemCount(state) - 1, action.index)) };
